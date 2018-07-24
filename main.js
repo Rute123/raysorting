@@ -8,6 +8,8 @@ function main(nworker, iterationsPerMessage, width, height){
     var canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
+    canvas.position = 'absolute';
+    canvas.margin = 'auto';
     var ctx = canvas.getContext('2d');
     document.body.appendChild(canvas);
     var image = ctx.getImageData(0, 0, width, height);
@@ -118,7 +120,7 @@ function main(nworker, iterationsPerMessage, width, height){
           this.radius2 = radius*radius;
       };
       Sphere.prototype = {
-          // returns distance when ray intersects with sphere surface 
+          // returns distance when ray intersects with sphere surface
 		  //***** OLHAR
           intersect: function(ray) {
               var distance = ray.origin.sub(this.center);
@@ -225,7 +227,7 @@ function main(nworker, iterationsPerMessage, width, height){
               if(n > 4) {
                   return new V3(0.0, 0.0, 0.0);
               }
-			  //Compara com a linha do infinito e a interseção com o objeto mais próximo;
+			  //Compara com a linha do infinito e a interseï¿½ï¿½o com o objeto mais prï¿½ximo;
               var hit = null;
               for(var i = 0; i < this.scene.objects.length;i++){
                   var o = this.scene.objects[i];
