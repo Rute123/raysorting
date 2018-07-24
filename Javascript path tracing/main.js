@@ -1,8 +1,10 @@
+//               4         2                  320    240
 function main(nworker, iterationsPerMessage, width, height){
     if(typeof(Worker) == 'undefined') {
         alert('Your browser does not support web worker!');
         return;
     }
+
     var canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
@@ -116,7 +118,8 @@ function main(nworker, iterationsPerMessage, width, height){
           this.radius2 = radius*radius;
       };
       Sphere.prototype = {
-          // returns distance when ray intersects with sphere surface
+          // returns distance when ray intersects with sphere surface 
+		  //***** OLHAR
           intersect: function(ray) {
               var distance = ray.origin.sub(this.center);
               var b = distance.dot(ray.direction);
@@ -201,6 +204,7 @@ function main(nworker, iterationsPerMessage, width, height){
                   this.buffer[i].z = 0.0;
               }
           },
+		  //***** OLHAR
           iterate: function() {
               var scene = this.scene;
               var w = scene.output.width;
@@ -221,7 +225,7 @@ function main(nworker, iterationsPerMessage, width, height){
               if(n > 4) {
                   return new V3(0.0, 0.0, 0.0);
               }
-
+			  //Compara com a linha do infinito e a interseção com o objeto mais próximo;
               var hit = null;
               for(var i = 0; i < this.scene.objects.length;i++){
                   var o = this.scene.objects[i];
