@@ -1,7 +1,10 @@
-//               4         2                  320    240
-function main(nworker, iterationsPerMessage, width, height){
+// PROJETO DE COMPUTAÇÃO GRÁFICA - Jader Abreu e Rute Maxsuelly (2018)
+// Path Tracing with Ray sorting
+
+//Chamadas do Canvas
+function main(nprocessos, interacaoPorSegundos, width, height){
     if(typeof(Worker) == 'undefined') {
-        alert('Your browser does not support web worker!');
+        alert('Seu navegador não suporta este arquivo');
         return;
     }
 
@@ -14,7 +17,7 @@ function main(nworker, iterationsPerMessage, width, height){
     document.body.appendChild(canvas);
     var image = ctx.getImageData(0, 0, width, height);
     var buffer = [];
-    var iterations = 0;
+    var interacoes = 0;
     var start = new Date();
     for(var i = 0; i < width*height*3; i++) {
         buffer.push(0.0);
@@ -31,16 +34,16 @@ function main(nworker, iterationsPerMessage, width, height){
           return a;
       }
 
-      var V3 = function(x, y, z) {
+      var Vetor = function(x, y, z) {
           this.x = x;
           this.y = y;
           this.z = z;
       }
-      V3.prototype = {
+      Vetor.prototype = {
           // iop -> inplace
           // ops -> scalar
           add: function(v) {
-              return new V3(this.x+v.x, this.y+v.y, this.z+v.z);
+              return new Vetor(this.x+v.x, this.y+v.y, this.z+v.z);
           },
           iadd: function(v) {
               this.x += v.x;
@@ -48,16 +51,16 @@ function main(nworker, iterationsPerMessage, width, height){
               this.z += v.z;
           },
           sub: function(v) {
-              return new V3(this.x-v.x, this.y-v.y, this.z-v.z);
+              return new Vetor(this.x-v.x, this.y-v.y, this.z-v.z);
           },
           mul: function(v) {
-              return new V3(this.x*v.x, this.y*v.y, this.z*v.z);
+              return new Vetor(this.x*v.x, this.y*v.y, this.z*v.z);
           },
           div: function(v) {
-              return new V3(this.x/v.x, this.y/v.y, this.z/v.z);
+              return new Vetor(this.x/v.x, this.y/v.y, this.z/v.z);
           },
           muls: function(s) {
-              return new V3(this.x*s, this.y*s, this.z*s);
+              return new Vetor(this.x*s, this.y*s, this.z*s);
           },
           divs: function(s) {
               return this.muls(1.0/s);
@@ -79,9 +82,9 @@ function main(nworker, iterationsPerMessage, width, height){
        */
       function getRandomNormalInHemisphere(v){
           do {
-              var v2 = new V3(Math.random()*2.0-1.0, Math.random()*2.0-1.0, Math.random()*2.0-1.0);
+              var v2 = new Vetor(Math.random()*2.0-1.0, Math.random()*2.0-1.0, Math.random()*2.0-1.0);
           } while(v2.dot(v2) > 1.0);
-          // should only require about 1.9 iterations of average
+          // should only require about 1.9 interacoes of average
           v2 = v2.normalize();
           // if the point is in the wrong hemisphere, mirror it
           if(v2.dot(v) < 0.0) {
@@ -136,7 +139,7 @@ function main(nworker, iterationsPerMessage, width, height){
 
       var Material = function(color, emission) {
           this.color = color;
-          this.emission = emission || new V3(0.0, 0.0, 0.0);
+          this.emission = emission || new Vetor(0.0, 0.0, 0.0);
       }
       Material.prototype = {
           bounce: function(ray, normal) {
@@ -194,7 +197,7 @@ function main(nworker, iterationsPerMessage, width, height){
           this.scene = scene;
           this.buffer = [];
           for(var i = 0; i < scene.output.width*scene.output.height;i++){
-              this.buffer.push(new V3(0.0, 0.0, 0.0));
+              this.buffer.push(new Vetor(0.0, 0.0, 0.0));
           }
 
       }
@@ -225,7 +228,7 @@ function main(nworker, iterationsPerMessage, width, height){
               var mint = Infinity;
               // trace no more than 5 bounces
               if(n > 4) {
-                  return new V3(0.0, 0.0, 0.0);
+                  return new Vetor(0.0, 0.0, 0.0);
               }
 			  //Compara com a linha do infinito e a interse��o com o objeto mais pr�ximo;
               var hit = null;
@@ -239,7 +242,7 @@ function main(nworker, iterationsPerMessage, width, height){
               }
 
               if(hit == null) {
-                  return new V3(0.0, 0.0, 0.0);
+                  return new Vetor(0.0, 0.0, 0.0);
               }
 
               var point = ray.origin.add(ray.direction.muls(mint));
@@ -259,40 +262,40 @@ function main(nworker, iterationsPerMessage, width, height){
           }
       }
 
-      var main = function(width, height, iterationsPerMessage, serialize) {
+      var main = function(width, height, interacaoPorSegundos, serialize) {
           var scene = {
               output: {width: width, height: height},
               camera: new Camera(
-                  new V3(0.0, -0.5, 0.0),
-                  new V3(-1.3, 1.0, 1.0),
-                  new V3(1.3, 1.0, 1.0),
-                  new V3(-1.3, 1.0, -1.0)
+                  new Vetor(0.0, -0.5, 0.0),
+                  new Vetor(-1.3, 1.0, 1.0),
+                  new Vetor(1.3, 1.0, 1.0),
+                  new Vetor(-1.3, 1.0, -1.0)
               ),
               objects: [
                   // glowing sphere
-                  //new Body(new Sphere(new V3(0.0, 3.0, 0.0), 0.5), new Material(new V3(0.9, 0.9, 0.9), new V3(1.5, 1.5, 1.5))),
-                  // glass sphere
-                  new Body(new Sphere(new V3(1.0, 2.0, 0.0), 0.5), new Glass(new V3(1.00, 1.00, 1.00), 1.5, 0.1)),
-                  // chrome sphere
-                  new Body(new Sphere(new V3(-1.1, 2.8, 0.0), 0.5), new Chrome(new V3(0.8, 0.8, 0.8))),
+                  //new Body(new Sphere(new Vetor(0.0, 3.0, 0.0), 0.5), new Material(new Vetor(0.9, 0.9, 0.9), new Vetor(1.5, 1.5, 1.5))),
+                  // textura glass sphere
+                  new Body(new Sphere(new Vetor(1.0, 2.0, 0.0), 0.5), new Glass(new Vetor(1.00, 1.00, 1.00), 1.5, 0.1)),
+                  // textura chrome sphere
+                  new Body(new Sphere(new Vetor(-1.1, 2.8, 0.0), 0.5), new Chrome(new Vetor(0.8, 0.8, 0.8))),
                   // floor
-                  new Body(new Sphere(new V3(0.0, 3.5, -10e6), 10e6-0.5), new Material(new V3(0.9, 0.9, 0.9))),
+                  new Body(new Sphere(new Vetor(0.0, 3.5, -10e6), 10e6-0.5), new Material(new Vetor(0.9, 0.9, 0.9))),
                   // back
-                  new Body(new Sphere(new V3(0.0, 10e6, 0.0), 10e6-4.5), new Material(new V3(0.9, 0.9, 0.9))),
+                  new Body(new Sphere(new Vetor(0.0, 10e6, 0.0), 10e6-4.5), new Material(new Vetor(0.9, 0.9, 0.9))),
                   // left
-                  new Body(new Sphere(new V3(-10e6, 3.5, 0.0), 10e6-1.9), new Material(new V3(0.9, 0.5, 0.5))),
+                  new Body(new Sphere(new Vetor(-10e6, 3.5, 0.0), 10e6-1.9), new Material(new Vetor(0.9, 0.5, 0.5))),
                   // right
-                  new Body(new Sphere(new V3(10e6, 3.5, 0.0), 10e6-1.9), new Material(new V3(0.5, 0.5, 0.9))),
+                  new Body(new Sphere(new Vetor(10e6, 3.5, 0.0), 10e6-1.9), new Material(new Vetor(0.5, 0.5, 0.9))),
                   // top light, the emmision should be close to that of warm sunlight (~5400k)
-                  new Body(new Sphere(new V3(0.0, 0.0, 10e6), 10e6-2.5), new Material(new V3(0.0, 0.0, 0.0), new V3(1.6, 1.47, 1.29))),
-                  // front
-                  new Body(new Sphere(new V3(0.0, -10e6, 0.0), 10e6-2.5), new Material(new V3(0.9, 0.9, 0.9))),
+                  new Body(new Sphere(new Vetor(0.0, 0.0, 10e6), 10e6-2.5), new Material(new Vetor(0.0, 0.0, 0.0), new Vetor(1.6, 1.47, 1.29))),
+                  // frontal
+                  new Body(new Sphere(new Vetor(0.0, -10e6, 0.0), 10e6-2.5), new Material(new Vetor(0.9, 0.9, 0.9))),
               ]
           }
           var renderer = new Renderer(scene);
           var buffer = [];
           while(true) {
-              for(var x = 0; x < iterationsPerMessage; x++) {
+              for(var x = 0; x < interacaoPorSegundos; x++) {
                   renderer.iterate();
               }
               postMessage(serializeBuffer(renderer.buffer, serialize));
@@ -332,12 +335,12 @@ function main(nworker, iterationsPerMessage, width, height){
       worker_function();
 
     var workers = [];
-    for(i = 0; i < nworker;i++){
+    for(i = 0; i < nprocessos;i++){
         var worker = new Worker(URL.createObjectURL(new Blob(["("+worker_function.toString()+")()"], {type: 'text/javascript'})));
         worker.onmessage = function(message) {
-            iterations += iterationsPerMessage;
+            interacoes += interacaoPorSegundos;
             var td = new Date()-start;
-            document.title = iterations + ' i - ' + Math.round(iterations*100000/td)/100  + ' i/s';
+            document.title = interacoes + ' i - ' + Math.round(interacoes*100000/td)/100  + ' i/s';
             var data = message.data;
             if(typeof(data) == 'string') {
                 data = JSON.parse(data);
@@ -346,14 +349,14 @@ function main(nworker, iterationsPerMessage, width, height){
                 buffer[j] += data[j];
             }
             for(var k=0,j=0;k < width*height*4;) {
-                image.data[k++] = buffer[j++]*255/iterations;
-                image.data[k++] = buffer[j++]*255/iterations;
-                image.data[k++] = buffer[j++]*255/iterations;
+                image.data[k++] = buffer[j++]*255/interacoes;
+                image.data[k++] = buffer[j++]*255/interacoes;
+                image.data[k++] = buffer[j++]*255/interacoes;
                 image.data[k++] = 255;
             }
             ctx.putImageData(image, 0, 0);
         }
-        worker.postMessage([width, height, iterationsPerMessage]);
+        worker.postMessage([width, height, interacaoPorSegundos]);
     }
 
 
