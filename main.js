@@ -2,9 +2,9 @@
 // Path Tracing with Ray sorting
 
 //Chamadas do Canvas
-function main(nprocessos, interacaoPorSegundos, width, height){
+function main(nprocessos, interacaoPorMensagens, width, height){
     if(typeof(Worker) == 'undefined') {
-        alert('Seu navegador não suporta este arquivo');
+        alert('Seu navegador não suporta este multiprocessos');
         return;
     }
 
