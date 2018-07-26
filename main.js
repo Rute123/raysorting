@@ -149,7 +149,7 @@ function main(nprocessos, interacaoPorMensagens, width, height){
               return ray.direcao.adicao(normal.multiplicacaoValor(angulo1*2.0));
           }
       });
-
+	  //Ver se é necessário - nas exigencias de descrição de cena indiceDeRefracao= 1.5
       var Vidro = function(cor, indiceDeRefracao, reflexao) {
           Material.call(this, cor);
           this.indiceDeRefracao = indiceDeRefracao;
@@ -175,7 +175,7 @@ function main(nprocessos, interacaoPorMensagens, width, height){
               if(Math.random() < refletancia+this.reflexao) {
                   return ray.direcao.adicao(normal.multiplicacaoValor(angulo1*2.0));
               }
-              // refraction
+              // refracao
               return (ray.direcao.adicao(normal.multiplicacaoValor(angulo1)).multiplicacaoValor(eta).adicao(normal.multiplicacaoValor(-angulo2)));
               //return ray.direction.multiplicacaoValor(eta).subtracao(normal.multiplicacaoValor(angulo2-eta*angulo1));
           }
@@ -208,7 +208,7 @@ function main(nprocessos, interacaoPorMensagens, width, height){
               var w = cena.saida.width;
               var h = cena.saida.height;
               var i = 0;
-              // randomly jitter pixels so there is no aliasing
+              // geracao de aleatoridade para evitar o antialising
               for(var y = Math.random()/h, yPasso = 1.0/h; y < 0.99999; y += yPasso){
                   for(var x = Math.random()/w, xPasso = 1.0/w; x < 0.99999; x += xPasso){
                       var ray = cena.camera.getRay(x, y);
@@ -219,11 +219,11 @@ function main(nprocessos, interacaoPorMensagens, width, height){
           },
           tracar: function(ray, n) {
               var pontoDeAtaque = Infinity;
-              // tracar no more than 5 contatoDaQuedas
+              // tracar nao mais que 5 contatoDaQueda
               if(n > 4) {
                   return new Vetor(0.0, 0.0, 0.0);
               }
-			  //Compara com a linha do infinito e a interse��o com o objeto mais pr�ximo;
+			  //Compara com a linha do infinito e a intersecao com o objeto mais proximo;
               var alvo = null;
               for(var i = 0; i < this.cena.objetos.length;i++){
                   var objeto = this.cena.objetos[i];
@@ -265,21 +265,21 @@ function main(nprocessos, interacaoPorMensagens, width, height){
                   new Vetor(-1.3, 1.0, -1.0)
               ),
               objetos: [
-                  // glowing sphere
+                  // textura brilho esfera
                   //new Corpo(new Sphere(new Vetor(0.0, 3.0, 0.0), 0.5), new Material(new Vetor(0.9, 0.9, 0.9), new Vetor(1.5, 1.5, 1.5))),
                   // textura Vidro sphere
                   new Corpo(new Esfera(new Vetor(1.0, 2.0, 0.0), 0.5), new Vidro(new Vetor(1.00, 1.00, 1.00), 1.5, 0.1)),
                   // textura Cromado Esfera
                   new Corpo(new Esfera(new Vetor(-1.1, 2.8, 0.0), 0.5), new Cromado(new Vetor(0.8, 0.8, 0.8))),
-                  // floor
+                  // chao
                   new Corpo(new Esfera(new Vetor(0.0, 3.5, -10e6), 10e6-0.5), new Material(new Vetor(0.9, 0.9, 0.9))),
-                  // back
+                  // posterior
                   new Corpo(new Esfera(new Vetor(0.0, 10e6, 0.0), 10e6-4.5), new Material(new Vetor(0.9, 0.9, 0.9))),
-                  // left
+                  // esquerda
                   new Corpo(new Esfera(new Vetor(-10e6, 3.5, 0.0), 10e6-1.9), new Material(new Vetor(0.9, 0.5, 0.5))),
-                  // right
+                  // direita
                   new Corpo(new Esfera(new Vetor(10e6, 3.5, 0.0), 10e6-1.9), new Material(new Vetor(0.5, 0.5, 0.9))),
-                  // top light, the emmision should be close to that of warm sunlight (~5400k)
+                  // Luz superior, a emissão deve estar aproximadamente da luz do sol quente (~ 5400k)
                   new Corpo(new Esfera(new Vetor(0.0, 0.0, 10e6), 10e6-2.5), new Material(new Vetor(0.0, 0.0, 0.0), new Vetor(1.6, 1.47, 1.29))),
                   // frontal
                   new Corpo(new Esfera(new Vetor(0.0, -10e6, 0.0), 10e6-2.5), new Material(new Vetor(0.9, 0.9, 0.9))),
@@ -317,10 +317,9 @@ function main(nprocessos, interacaoPorMensagens, width, height){
           main(dado[0], dado[1], dado[2], serialize);
       }
     }
-    // This is in case of normal worker start
-    // "window" is not defined in web worker
-    // so if you load this file directly using `new Worker`
-    // the worker code will still execute properly
+	// Play no work, sabendo que a "window" ainda nao foi definida no web Work
+	// Carrega diretamente o 'new Worker'  
+	// Executa corretamente o código
     if(window!=self)
       funcao_processamento();
 
