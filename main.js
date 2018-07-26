@@ -131,6 +131,7 @@ function main(nprocessos, interacaoPorMensagens, width, height){
           }
       };
 
+      //Emissão Representa a intensidade da luz
       var Material = function(cor, emissao) {
           this.cor = cor;
           this.emissao = emissao || new Vetor(0.0, 0.0, 0.0);
@@ -190,6 +191,14 @@ function main(nprocessos, interacaoPorMensagens, width, height){
 
       var Renderizador = function(cena) {
           this.cena = cena;
+          this.vetoresAgrupadores = [6];
+          var grupo1 = [];
+          this.vetoresAgrupadores[0] = {direcaoAgrupada: new Vetor(10, 0, 0), rays: grupo1};
+          this.vetoresAgrupadores[1] = {direcaoAgrupada: new Vetor(-10, 0, 0), rays: grupo1};
+          this.vetoresAgrupadores[2] = {direcaoAgrupada: new Vetor(0, 10, 0), rays: grupo1};
+          this.vetoresAgrupadores[3] = {direcaoAgrupada: new Vetor(0, -10, 0), rays: grupo1};
+          this.vetoresAgrupadores[4] = {direcaoAgrupada: new Vetor(0, 0, 10), rays: grupo1};
+          this.vetoresAgrupadores[5] = {direcaoAgrupada: new Vetor( 0, 0,-10), rays: grupo1};
           this.buffer = [];
           for(var i = 0; i < cena.saida.width*cena.saida.height;i++){
               this.buffer.push(new Vetor(0.0, 0.0, 0.0));
@@ -212,8 +221,8 @@ function main(nprocessos, interacaoPorMensagens, width, height){
               var h = cena.saida.height;
               var i = 0;
               // Jitter- Uma amostragem estratificada - amostragem aleatória - soma de integrais de Monte Carlo;
-			  // Mascara o antialising nos pixels das imagens originais,
-			  // Gera um sobreamento automatico devido a luz irradiante.
+			          // Mascara o antialising nos pixels das imagens originais,
+			        // Gera um sobreamento automatico devido a luz irradiante.
               for(var y = Math.random()/h, yPasso = 1.0/h; y < 0.99999; y += yPasso){
                   for(var x = Math.random()/w, xPasso = 1.0/w; x < 0.99999; x += xPasso){
                       var ray = cena.camera.getRay(x, y);
@@ -255,7 +264,29 @@ function main(nprocessos, interacaoPorMensagens, width, height){
                   ponto = ray.origem.adicao(ray.direcao.multiplicacaoValor(pontoDeAtaque*0.9999999));
               }
               var novoRay = {origem: ponto, direcao: direcao};
+              this.agruparSegmentos(novoRay);
+              //Agrupar novoRay de acordo com a sua proximidade de diração com os eixos xd,xe,yc, yb,zt,zf
               return this.tracar(novoRay, n+1).multiplicacaoVetor(alvo.material.cor).adicao(alvo.material.emissao);
+          },
+          agruparSegmentos:function (ray){
+            menorResultante = -1000;
+            vetorAgrupar = null;
+            for (var i = 0; i < this.vetoresAgrupadores.length; i++) {
+              var resultante =angulo1 = Math.abs(ray.direcao.produtoEscalar(this.vetoresAgrupadores[i].direcaoAgrupada));
+              if(menorResultante<resultante){
+                menorResultante = resultante;
+                vetorAgrupar = this.vetoresAgrupadores[i];
+              }
+            }
+            if(vetorAgrupar != null){
+              vetorAgrupar.rays.push(ray);
+            }
+          },
+          imprimirAgrupamentosRays: function(){
+            for (var i = 0; i < this.vetoresAgrupadores.length; i++) {
+              console.log("Direção: " + this.vetoresAgrupadores[i].direcaoAgrupada.x + ","+ this.vetoresAgrupadores[i].direcaoAgrupada.y + ","+ this.vetoresAgrupadores[i].direcaoAgrupada.z);
+              console.log("Quantidade de Raios " + this.vetoresAgrupadores[i].rays.length);
+            }
           }
       }
 
@@ -286,7 +317,7 @@ function main(nprocessos, interacaoPorMensagens, width, height){
                 // direita
                 new Corpo(new Esfera(new Vetor(10e6, 3.5, 0.0), 10e6-1.9), new Material(new Vetor(0.5, 0.5, 0.9))),
                 // Luz superior, a emissão deve estar aproximadamente da luz do sol quente (~ 5400k)
-                new Corpo(new Esfera(new Vetor(0, 2.6, 10e6), 10e6-2.5), new Material(new Vetor(0.5, 0.5, 0.9), new Vetor(1.6, 1.47, 1.29))),
+                new Corpo(new Esfera(new Vetor(0, 2.6, 10e6), 10e6-2.5), new Material(new Vetor(0,0,0), new Vetor(1.6, 1.47, 1.29))),
                 // frontal
                 new Corpo(new Esfera(new Vetor(0.0, -10e6, 0.0), 10e6-2.5), new Material(new Vetor(0.9, 0.9, 0.9))),
               ]
@@ -297,6 +328,7 @@ function main(nprocessos, interacaoPorMensagens, width, height){
               for(var x = 0; x < interacaoPorMensagens; x++) {
                   renderizador.iterar();
               }
+              renderizador.imprimirAgrupamentosRays();
               postMessage(serializarBuffer(renderizador.buffer, serialize));
               renderizador.limparBuffer();
           }
@@ -335,7 +367,8 @@ function main(nprocessos, interacaoPorMensagens, width, height){
           processador_Paralelo.onmessage = function(mensagem) {
               interacoes += interacaoPorMensagens;
               var tempoDecorrido = new Date()-inicio;
-              document.title = interacoes + ' i - ' + Math.round(interacoes*100000/tempoDecorrido)/100  + ' i/s';
+              document.getElementById("interacoes").innerHTML = ""+interacoes ;
+              document.getElementById("interacoesPorSegundo").innerHTML =  ""+Math.round(interacoes*100000/tempoDecorrido)/100;
               var dados = mensagem.data;
               if(typeof(dados) == 'string') {
                   dados = JSON.parse(dados);
