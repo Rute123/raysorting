@@ -271,13 +271,13 @@ function main(nprocessos, interacaoPorMensagens, width, height){
                 // textura Vidro sphere
                 new Corpo(new Esfera(new Vetor(1.0, 2.0, 0.0), 0.5), new Vidro(new Vetor(1.00, 1.00, 1.00), 1.5, 0.1)),
                 // textura Cromado Esfera
-                new Corpo(new Esfera(new Vetor(-1.1, 2.8, 0.0), 0.5), new Cromado(new Vetor(0.8, 0.8, 0.8))),
+                new Corpo(new Esfera(new Vetor(-1.1, 2.3, 0.0), 0.5), new Cromado(new Vetor(0.8, 0.8, 0.8))),
                 // textura Cromado Esfera
-                new Corpo(new Esfera(new Vetor(0, 2.3, 0.0), 0.5), new Cromado(new Vetor(0.8, 0.8, 0.8))),
+                new Corpo(new Esfera(new Vetor(0, 2.6, 0.0), 0.5), new Cromado(new Vetor(0.8, 0.8, 0.8))),
                 // chao
                 new Corpo(new Esfera(new Vetor(0.0, 3.5, -10e6), 10e6-0.5), new Material(new Vetor(0.9, 0.9, 0.9))),
                 // teto
-                new Corpo(new Esfera(new Vetor(0.0, 0, -10e7), 10e6-2.5), new Material(new Vetor(0, 0, 0))),
+                new Corpo(new Esfera(new Vetor(10e6/2-1, 3.5, 10e6/2-1), 10e6), new Material(new Vetor(0.9, 0.5, 0.5))),
                 // posterior
                 new Corpo(new Esfera(new Vetor(0.0, 10e6, 0.0), 10e6-4.5), new Material(new Vetor(0.9, 0.9, 0.9))),
                 // esquerda
@@ -285,7 +285,7 @@ function main(nprocessos, interacaoPorMensagens, width, height){
                 // direita
                 new Corpo(new Esfera(new Vetor(10e6, 3.5, 0.0), 10e6-1.9), new Material(new Vetor(0.5, 0.5, 0.9))),
                 // Luz superior, a emissão deve estar aproximadamente da luz do sol quente (~ 5400k)
-                new Corpo(new Esfera(new Vetor(0.0, 0.0, 10e6), 10e6-2.5), new Material(new Vetor(0.0, 0.0, 0.0), new Vetor(1.6, 1.47, 1.29))),
+                new Corpo(new Esfera(new Vetor(0, 2.6, 10e6), 10e6-2.5), new Material(new Vetor(0.5, 0.5, 0.9), new Vetor(1.6, 1.47, 1.29))),
                 // frontal
                 new Corpo(new Esfera(new Vetor(0.0, -10e6, 0.0), 10e6-2.5), new Material(new Vetor(0.9, 0.9, 0.9))),
               ]
