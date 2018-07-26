@@ -2,29 +2,30 @@
 // Path Tracing with Ray sorting
 
 //Chamadas do Canvas
-function main(nprocessos, interacaoPorSegundos, width, height){
-    if(typeof(Worker) == 'undefined') {
-        alert('Seu navegador não suporta este arquivo');
-        return;
-    }
+function main(nprocessos, interacaoPorMensagens, width, height){
+  if(typeof(Worker) == 'undefined') {
+      alert('Seu navegador não suporta este multiprocessos');
+      return;
+  }
 
-    var canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    canvas.position = 'absolute';
-    canvas.margin = 'auto';
-    var ctx = canvas.getContext('2d');
-    document.body.appendChild(canvas);
-    var image = ctx.getImageData(0, 0, width, height);
-    var buffer = [];
-    var interacoes = 0;
-    var start = new Date();
-    for(var i = 0; i < width*height*3; i++) {
-        buffer.push(0.0);
-    }
-    function worker_function() {
+  var canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  canvas.position = 'absolute';
+  canvas.margin = 'auto';
+  var contexto = canvas.getContext('2d');
+  document.body.appendChild(canvas);
+  var imagem = contexto.getImageData(0, 0, width, height);
+  var buffer = [];
+  var interacoes = 0;
+  var inicio = new Date();
+  for(var i = 0; i < width*height*3; i++) {
+      buffer.push(0.0);
+  }
 
-      var extend = function(a) {
+    function funcao_processamento() {
+
+      var heranca = function(a) {
           for(var i = 1; i < arguments.length; i++) {
               var b = arguments[i];
               for(var c in b) {
@@ -42,322 +43,315 @@ function main(nprocessos, interacaoPorSegundos, width, height){
       Vetor.prototype = {
           // iop -> inplace
           // ops -> scalar
-          add: function(v) {
+          adicao: function(v) {
               return new Vetor(this.x+v.x, this.y+v.y, this.z+v.z);
           },
-          iadd: function(v) {
+          adicaoInterna: function(v) {
               this.x += v.x;
               this.y += v.y;
               this.z += v.z;
           },
-          sub: function(v) {
+          subtracao: function(v) {
               return new Vetor(this.x-v.x, this.y-v.y, this.z-v.z);
           },
-          mul: function(v) {
+          multiplicacaoVetor: function(v) {
               return new Vetor(this.x*v.x, this.y*v.y, this.z*v.z);
           },
-          div: function(v) {
+          divisaoVetor: function(v) {
               return new Vetor(this.x/v.x, this.y/v.y, this.z/v.z);
           },
-          muls: function(s) {
+          multiplicacaoValor: function(s) {
               return new Vetor(this.x*s, this.y*s, this.z*s);
           },
-          divs: function(s) {
-              return this.muls(1.0/s);
+          divisaoValor: function(s) {
+              return this.multiplicacaoValor(1.0/s);
           },
-          dot: function(v) {
+          produtoEscalar: function(v) {
               return this.x*v.x+this.y*v.y+this.z*v.z;
           },
-          normalize: function(){
-              return this.divs(Math.sqrt(this.dot(this)));
+          normalizar: function(){
+              return this.divisaoValor(Math.sqrt(this.produtoEscalar(this)));
           }
       };
 
-      /*
-       * This is my crude way of generating random normals in a hemisphere.
-       * In the first step I generate random vectors with components
-       * from -1 to 1. As this introduces a bias I discard all the points
-       * outside of the unit sphere. Now I've got a random normal vector.
-       * The last step is to mirror the point if it is in the wrong hemisphere.
-       */
-      function getRandomNormalInHemisphere(v){
+      // Retorna uma normal randomica utilizando o algoritimo de roleta russa (OLHAR);**
+      function getNormalRandomica(v){
           do {
               var v2 = new Vetor(Math.random()*2.0-1.0, Math.random()*2.0-1.0, Math.random()*2.0-1.0);
-          } while(v2.dot(v2) > 1.0);
-          // should only require about 1.9 interacoes of average
-          v2 = v2.normalize();
-          // if the point is in the wrong hemisphere, mirror it
-          if(v2.dot(v) < 0.0) {
-              return v2.muls(-1);
+          } while(v2.produtoEscalar(v2) > 1.0);
+          // Mostra apenas 1.9 interacoes em média
+          v2 = v2.normalizar();
+          // Se o ponto estiver na área errada, espelhe-o
+          if(v2.produtoEscalar(v) < 0.0) {
+              return v2.multiplicacaoValor(-1);
           }
           return v2;
       }
 
-      /*
-       * The camera is defined by an eyepoint (origin) and three corners
-       * of the view plane (it's a rect in my case...)
+      /* Definicao da camera por um ponto de visao (Origem) e seu plano de projecao
+       * com os cantos (superiorEsquerdo,superiorDireito,inferiorEsquerdo)
        */
-      var Camera = function(origin, topleft, topright, bottomleft) {
-          this.origin = origin;
-          this.topleft = topleft;
-          this.topright = topleft;
-          this.bottomleft = bottomleft;
+      var Camera = function(origem, superiorEsquerdo, superiorDireito, inferiorEsquerdo) {
+          this.origem = origem;
+          this.superiorEsquerdo = superiorEsquerdo;
+          this.superiorDireito = superiorEsquerdo;
+          this.inferiorEsquerdo = inferiorEsquerdo;
 
-          this.xd = topright.sub(topleft);
-          this.yd = bottomleft.sub(topleft);
+          this.xd = superiorDireito.subtracao(superiorEsquerdo);
+          this.yd = inferiorEsquerdo.subtracao(superiorEsquerdo);
       }
       Camera.prototype = {
           getRay: function(x, y) {
-              // point on screen plane
-              var p = this.topleft.add(this.xd.muls(x)).add(this.yd.muls(y));
+              // ponto no plano de tela
+              var p = this.superiorEsquerdo.adicao(this.xd.multiplicacaoValor(x)).adicao(this.yd.multiplicacaoValor(y));
               return {
-                  origin: this.origin,
-                  direction: p.sub(this.origin).normalize()
+                  origem: this.origem,
+                  direcao: p.subtracao(this.origem).normalizar()
               };
           }
       };
 
-      var Sphere = function(center, radius) {
-          this.center = center;
-          this.radius = radius;
-          this.radius2 = radius*radius;
+      var Esfera = function(centro, raio) {
+          this.centro = centro;
+          this.raio = raio;
+          this.raioAoQuadrado = raio*raio;
       };
-      Sphere.prototype = {
-          // returns distance when ray intersects with sphere surface
-		  //***** OLHAR
-          intersect: function(ray) {
-              var distance = ray.origin.sub(this.center);
-              var b = distance.dot(ray.direction);
-              var c = distance.dot(distance) - this.radius2;
+      Esfera.prototype = {
+          // Retorna distancia quando raio intersepta com a superficie da esfera
+          intersecao: function(ray) {
+              var distancia = ray.origem.subtracao(this.centro);
+              var b = distancia.produtoEscalar(ray.direcao);
+              var c = distancia.produtoEscalar(distancia) - this.raioAoQuadrado;
               var d = b*b - c;
               return d > 0 ? -b - Math.sqrt(d) : -1;
           },
-          getNormal: function(point) {
-              return point.sub(this.center).normalize();
+          getNormal: function(ponto) {
+              return ponto.subtracao(this.centro).normalizar();
           }
       };
 
-      var Material = function(color, emission) {
-          this.color = color;
-          this.emission = emission || new Vetor(0.0, 0.0, 0.0);
+      var Material = function(cor, emissao) {
+          this.cor = cor;
+          this.emissao = emissao || new Vetor(0.0, 0.0, 0.0);
       }
       Material.prototype = {
-          bounce: function(ray, normal) {
-              return getRandomNormalInHemisphere(normal);
+          contatoDaQueda: function(ray, normal) {
+              return getNormalRandomica(normal);
           }
       };
 
-      var Chrome = function(color) {
-          Material.call(this, color);
+
+      var Cromado = function(cor) {
+          Material.call(this, cor);
       }
-      Chrome.prototype = extend({}, Material.prototype, {
-          bounce: function(ray, normal) {
-              var theta1 = Math.abs(ray.direction.dot(normal));
-              return ray.direction.add(normal.muls(theta1*2.0));
+      Cromado.prototype = heranca({}, Material.prototype, {
+          contatoDaQueda: function(ray, normal) {
+              var angulo1 = Math.abs(ray.direcao.produtoEscalar(normal));
+              return ray.direcao.adicao(normal.multiplicacaoValor(angulo1*2.0));
           }
       });
-
-      var Glass = function(color, ior, reflection) {
-          Material.call(this, color);
-          this.ior = ior;
-          this.reflection = reflection;
+    //Ver se é necessário - nas exigencias de descrição de cena indiceDeRefracao= 1.5
+      var Vidro = function(cor, indiceDeRefracao, reflexao) {
+          Material.call(this, cor);
+          this.indiceDeRefracao = indiceDeRefracao;
+          this.reflexao = reflexao;
       }
-      Glass.prototype = extend({}, Material.prototype, {
-          bounce: function(ray, normal) {
-              var theta1 = Math.abs(ray.direction.dot(normal));
-              if(theta1 >= 0.0) {
-                  var internalIndex = this.ior;
-                  var externalIndex = 1.0;
+      Vidro.prototype = heranca({}, Material.prototype, {
+          contatoDaQueda: function(ray, normal) {
+              var angulo1 = Math.abs(ray.direcao.produtoEscalar(normal));
+              if(angulo1 >= 0.0) {
+                  var indiceInterno = this.indiceDeRefracao;
+                  var indiceExterno = 1.0;
               }
               else {
-                  var internalIndex = 1.0;
-                  var externalIndex = this.ior;
+                  var indiceInterno = 1.0;
+                  var indiceExterno = this.indiceDeRefracao;
               }
-              var eta = externalIndex/internalIndex;
-              var theta2 = Math.sqrt(1.0 - (eta * eta) * (1.0 - (theta1 * theta1)));
-              var rs = (externalIndex * theta1 - internalIndex * theta2) / (externalIndex*theta1 + internalIndex * theta2);
-              var rp = (internalIndex * theta1 - externalIndex * theta2) / (internalIndex*theta1 + externalIndex * theta2);
-              var reflectance = (rs*rs + rp*rp);
-              // reflection
-              if(Math.random() < reflectance+this.reflection) {
-                  return ray.direction.add(normal.muls(theta1*2.0));
+              var proporcaoRefracao = indiceExterno/indiceInterno;
+              var angulo2 = Math.sqrt(1.0 - (proporcaoRefracao * proporcaoRefracao) * (1.0 - (angulo1 * angulo1)));
+              var rs = (indiceExterno * angulo1 - indiceInterno * angulo2) / (indiceExterno*angulo1 + indiceInterno * angulo2);
+              var rp = (indiceInterno * angulo1 - indiceExterno * angulo2) / (indiceInterno*angulo1 + indiceExterno * angulo2);
+              var refletancia = (rs*rs + rp*rp);
+              // reflexao
+              if(Math.random() < refletancia+this.reflexao) {
+                  return ray.direcao.adicao(normal.multiplicacaoValor(angulo1*2.0));
               }
-              // refraction
-              return (ray.direction.add(normal.muls(theta1)).muls(eta).add(normal.muls(-theta2)));
-              //return ray.direction.muls(eta).sub(normal.muls(theta2-eta*theta1));
+              // refracao
+              return (ray.direcao.adicao(normal.multiplicacaoValor(angulo1)).multiplicacaoValor(proporcaoRefracao).adicao(normal.multiplicacaoValor(-angulo2)));
+              //return ray.direction.multiplicacaoValor(proporcaoRefracao).subtracao(normal.multiplicacaoValor(angulo2-proporcaoRefracao*angulo1));
           }
       });
 
-      var Body = function(shape, material) {
-          this.shape = shape;
+      var Corpo = function(forma, material) {
+          this.forma = forma;
           this.material = material;
       }
 
-      var Renderer = function(scene) {
-          this.scene = scene;
+      var Renderizador = function(cena) {
+          this.cena = cena;
           this.buffer = [];
-          for(var i = 0; i < scene.output.width*scene.output.height;i++){
+          for(var i = 0; i < cena.saida.width*cena.saida.height;i++){
               this.buffer.push(new Vetor(0.0, 0.0, 0.0));
           }
 
       }
-      Renderer.prototype = {
-          clearBuffer: function() {
+      Renderizador.prototype = {
+          limparBuffer: function() {
               for(var i = 0; i < this.buffer.length; i++) {
                   this.buffer[i].x = 0.0;
                   this.buffer[i].y = 0.0;
                   this.buffer[i].z = 0.0;
               }
           },
-		  //***** OLHAR
-          iterate: function() {
-              var scene = this.scene;
-              var w = scene.output.width;
-              var h = scene.output.height;
+		      //***** OLHAR
+          iterar: function() {
+              var cena = this.cena;
+              var w = cena.saida.width;
+              var h = cena.saida.height;
               var i = 0;
-              // randomly jitter pixels so there is no aliasing
-              for(var y = Math.random()/h, ystep = 1.0/h; y < 0.99999; y += ystep){
-                  for(var x = Math.random()/w, xstep = 1.0/w; x < 0.99999; x += xstep){
-                      var ray = scene.camera.getRay(x, y);
-                      var color = this.trace(ray, 0);
-                      this.buffer[i++].iadd(color);
+              // geracao de aleatoridade para evitar o antialising
+              for(var y = Math.random()/h, yPasso = 1.0/h; y < 0.99999; y += yPasso){
+                  for(var x = Math.random()/w, xPasso = 1.0/w; x < 0.99999; x += xPasso){
+                      var ray = cena.camera.getRay(x, y);
+                      var cor = this.tracar(ray, 0);
+                      this.buffer[i++].adicaoInterna(cor);
                   }
               }
           },
-          trace: function(ray, n) {
-              var mint = Infinity;
-              // trace no more than 5 bounces
+          tracar: function(ray, n) {
+              var pontoDeAtaque = Infinity;
+              // tracar nao mais que 5 contatoDaQueda
               if(n > 4) {
                   return new Vetor(0.0, 0.0, 0.0);
               }
-			  //Compara com a linha do infinito e a interse��o com o objeto mais pr�ximo;
-              var hit = null;
-              for(var i = 0; i < this.scene.objects.length;i++){
-                  var o = this.scene.objects[i];
-                  var t = o.shape.intersect(ray);
-                  if(t > 0 && t <= mint) {
-                      mint = t;
-                      hit = o;
+			  //Compara com a linha do infinito e a intersecao com o objeto mais proximo;
+              var alvo = null;
+              for(var i = 0; i < this.cena.objetos.length;i++){
+                  var objeto = this.cena.objetos[i];
+                  var toque = objeto.forma.intersecao(ray);
+                  if(toque > 0 && toque <= pontoDeAtaque) {
+                      pontoDeAtaque = toque;
+                      alvo = objeto;
                   }
               }
 
-              if(hit == null) {
+              if(alvo == null) {
                   return new Vetor(0.0, 0.0, 0.0);
               }
 
-              var point = ray.origin.add(ray.direction.muls(mint));
-              var normal = hit.shape.getNormal(point);
-              var direction = hit.material.bounce(ray, normal);
-              // if the ray is refractedmove the intersection point a bit in
-              if(direction.dot(ray.direction) > 0.0) {
-                  point = ray.origin.add(ray.direction.muls(mint*1.0000001));
+              var ponto = ray.origem.adicao(ray.direcao.multiplicacaoValor(pontoDeAtaque));
+              var normal = alvo.forma.getNormal(ponto);
+              var direcao = alvo.material.contatoDaQueda(ray, normal);
+              // if the ray is refractedmove the intersecaoion point a bit in
+              if(direcao.produtoEscalar(ray.direcao) > 0.0) {
+                  ponto = ray.origem.adicao(ray.direcao.multiplicacaoValor(pontoDeAtaque*1.0000001));
               }
               // otherwise move it out to prevent problems with floating point
               // accuracy
               else {
-                  point = ray.origin.add(ray.direction.muls(mint*0.9999999));
+                  ponto = ray.origem.adicao(ray.direcao.multiplicacaoValor(pontoDeAtaque*0.9999999));
               }
-              var newray = {origin: point, direction: direction};
-              return this.trace(newray, n+1).mul(hit.material.color).add(hit.material.emission);
+              var novoRay = {origem: ponto, direcao: direcao};
+              return this.tracar(novoRay, n+1).multiplicacaoVetor(alvo.material.cor).adicao(alvo.material.emissao);
           }
       }
 
-      var main = function(width, height, interacaoPorSegundos, serialize) {
-          var scene = {
-              output: {width: width, height: height},
+      var main = function(width, height, interacaoPorMensagens, serialize) {
+          var cena = {
+              saida: {width: width, height: height},
               camera: new Camera(
                   new Vetor(0.0, -0.5, 0.0),
                   new Vetor(-1.3, 1.0, 1.0),
                   new Vetor(1.3, 1.0, 1.0),
                   new Vetor(-1.3, 1.0, -1.0)
               ),
-              objects: [
-                  // glowing sphere
-                  //new Body(new Sphere(new Vetor(0.0, 3.0, 0.0), 0.5), new Material(new Vetor(0.9, 0.9, 0.9), new Vetor(1.5, 1.5, 1.5))),
-                  // textura glass sphere
-                  new Body(new Sphere(new Vetor(1.0, 2.0, 0.0), 0.5), new Glass(new Vetor(1.00, 1.00, 1.00), 1.5, 0.1)),
-                  // textura chrome sphere
-                  new Body(new Sphere(new Vetor(-1.1, 2.8, 0.0), 0.5), new Chrome(new Vetor(0.8, 0.8, 0.8))),
-                  // floor
-                  new Body(new Sphere(new Vetor(0.0, 3.5, -10e6), 10e6-0.5), new Material(new Vetor(0.9, 0.9, 0.9))),
-                  // back
-                  new Body(new Sphere(new Vetor(0.0, 10e6, 0.0), 10e6-4.5), new Material(new Vetor(0.9, 0.9, 0.9))),
-                  // left
-                  new Body(new Sphere(new Vetor(-10e6, 3.5, 0.0), 10e6-1.9), new Material(new Vetor(0.9, 0.5, 0.5))),
-                  // right
-                  new Body(new Sphere(new Vetor(10e6, 3.5, 0.0), 10e6-1.9), new Material(new Vetor(0.5, 0.5, 0.9))),
-                  // top light, the emmision should be close to that of warm sunlight (~5400k)
-                  new Body(new Sphere(new Vetor(0.0, 0.0, 10e6), 10e6-2.5), new Material(new Vetor(0.0, 0.0, 0.0), new Vetor(1.6, 1.47, 1.29))),
-                  // frontal
-                  new Body(new Sphere(new Vetor(0.0, -10e6, 0.0), 10e6-2.5), new Material(new Vetor(0.9, 0.9, 0.9))),
+              objetos: [
+                // textura brilho esfera
+                //new Corpo(new Sphere(new Vetor(0.0, 3.0, 0.0), 0.5), new Material(new Vetor(0.9, 0.9, 0.9), new Vetor(1.5, 1.5, 1.5))),
+                // textura Vidro sphere
+                new Corpo(new Esfera(new Vetor(1.0, 2.0, 0.0), 0.5), new Vidro(new Vetor(1.00, 1.00, 1.00), 1.5, 0.1)),
+                // textura Cromado Esfera
+                new Corpo(new Esfera(new Vetor(-1.1, 2.8, 0.0), 0.5), new Cromado(new Vetor(0.8, 0.8, 0.8))),
+                // textura Cromado Esfera
+                new Corpo(new Esfera(new Vetor(0, 2.3, 0.0), 0.5), new Cromado(new Vetor(0.8, 0.8, 0.8))),
+                // chao
+                new Corpo(new Esfera(new Vetor(0.0, 3.5, -10e6), 10e6-0.5), new Material(new Vetor(0.9, 0.9, 0.9))),
+                // teto
+                new Corpo(new Esfera(new Vetor(0.0, 0, -10e7), 10e6-2.5), new Material(new Vetor(0, 0, 0))),
+                // posterior
+                new Corpo(new Esfera(new Vetor(0.0, 10e6, 0.0), 10e6-4.5), new Material(new Vetor(0.9, 0.9, 0.9))),
+                // esquerda
+                new Corpo(new Esfera(new Vetor(-10e6, 3.5, 0.0), 10e6-1.9), new Material(new Vetor(0.9, 0.5, 0.5))),
+                // direita
+                new Corpo(new Esfera(new Vetor(10e6, 3.5, 0.0), 10e6-1.9), new Material(new Vetor(0.5, 0.5, 0.9))),
+                // Luz superior, a emissão deve estar aproximadamente da luz do sol quente (~ 5400k)
+                new Corpo(new Esfera(new Vetor(0.0, 0.0, 10e6), 10e6-2.5), new Material(new Vetor(0.0, 0.0, 0.0), new Vetor(1.6, 1.47, 1.29))),
+                // frontal
+                new Corpo(new Esfera(new Vetor(0.0, -10e6, 0.0), 10e6-2.5), new Material(new Vetor(0.9, 0.9, 0.9))),
               ]
           }
-          var renderer = new Renderer(scene);
+          var renderizador = new Renderizador(cena);
           var buffer = [];
           while(true) {
-              for(var x = 0; x < interacaoPorSegundos; x++) {
-                  renderer.iterate();
+              for(var x = 0; x < interacaoPorMensagens; x++) {
+                  renderizador.iterar();
               }
-              postMessage(serializeBuffer(renderer.buffer, serialize));
-              renderer.clearBuffer();
+              postMessage(serializarBuffer(renderizador.buffer, serialize));
+              renderizador.limparBuffer();
           }
       }
 
-      var serializeBuffer = function(rbuffer, json) {
+      var serializarBuffer = function(renderizadorBuffer, json) {
           var buffer = [];
-          for(var i = 0; i < rbuffer.length; i++){
-              buffer.push(rbuffer[i].x);
-              buffer.push(rbuffer[i].y);
-              buffer.push(rbuffer[i].z);
+          for(var i = 0; i < renderizadorBuffer.length; i++){
+              buffer.push(renderizadorBuffer[i].x);
+              buffer.push(renderizadorBuffer[i].y);
+              buffer.push(renderizadorBuffer[i].z);
           }
           return json ? JSON.stringify(buffer) : buffer;
       }
 
-      onmessage = function(message) {
-          var data = message.data;
+      onmessage = function(mensagem) {
+          var dados = mensagem.data;
           var serialize = false;
-          // the current stable versions of chrome
-          // only pass strings as messages in that
-          // case I use native json for serializing
-          // the data
-          if(typeof(data) == 'string') {
-              data = JSON.parse('['+data+']');
+          // Usamos Json para trocar mensagens com os processadores
+          if(typeof(dados) == 'string') {
+              dados = JSON.parse('['+dados+']');
               serialize = true;
           }
-          main(data[0], data[1], data[2], serialize);
+          main(dados[0], dados[1], dados[2], serialize);
       }
     }
-    // This is in case of normal worker start
-    // "window" is not defined in web worker
-    // so if you load this file directly using `new Worker`
-    // the worker code will still execute properly
-    if(window!=self)
-      worker_function();
+    // Play no work, sabendo que a "window" ainda nao foi definida no web Work
+  	// Carrega diretamente o 'new Worker'
+  	// Executa corretamente o código
+      if(window!=self)
+        funcao_processamento();
 
-    var workers = [];
-    for(i = 0; i < nprocessos;i++){
-        var worker = new Worker(URL.createObjectURL(new Blob(["("+worker_function.toString()+")()"], {type: 'text/javascript'})));
-        worker.onmessage = function(message) {
-            interacoes += interacaoPorSegundos;
-            var td = new Date()-start;
-            document.title = interacoes + ' i - ' + Math.round(interacoes*100000/td)/100  + ' i/s';
-            var data = message.data;
-            if(typeof(data) == 'string') {
-                data = JSON.parse(data);
-            }
-            for(var j = 0; j < data.length; j++) {
-                buffer[j] += data[j];
-            }
-            for(var k=0,j=0;k < width*height*4;) {
-                image.data[k++] = buffer[j++]*255/interacoes;
-                image.data[k++] = buffer[j++]*255/interacoes;
-                image.data[k++] = buffer[j++]*255/interacoes;
-                image.data[k++] = 255;
-            }
-            ctx.putImageData(image, 0, 0);
-        }
-        worker.postMessage([width, height, interacaoPorSegundos]);
-    }
+      var processadores_Paralelos = [];
+      for(i = 0; i < nprocessos;i++){
+          var processador_Paralelo = new Worker(URL.createObjectURL(new Blob(["("+funcao_processamento.toString()+")()"], {type: 'text/javascript'})));
+          processador_Paralelo.onmessage = function(mensagem) {
+              interacoes += interacaoPorMensagens;
+              var tempoDecorrido = new Date()-inicio;
+              document.title = interacoes + ' i - ' + Math.round(interacoes*100000/tempoDecorrido)/100  + ' i/s';
+              var dados = mensagem.data;
+              if(typeof(dados) == 'string') {
+                  dados = JSON.parse(dados);
+              }
+              for(var j = 0; j < dados.length; j++) {
+                  buffer[j] += dados[j];
+              }
+              for(var k=0,j=0;k < width*height*4;) {
+                  imagem.data[k++] = buffer[j++]*255/interacoes;
+                  imagem.data[k++] = buffer[j++]*255/interacoes;
+                  imagem.data[k++] = buffer[j++]*255/interacoes;
+                  imagem.data[k++] = 255;
+              }
+              contexto.putImageData(imagem, 0, 0);
+          }
+          processador_Paralelo.postMessage([width, height, interacaoPorMensagens]);
+      }
 
 
 }
