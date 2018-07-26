@@ -205,12 +205,14 @@ function main(nprocessos, interacaoPorMensagens, width, height){
               }
           },
 		  //Arquivos de saida
+		  // Disparo de ray a partir da camera
           iterar: function() {
               var cena = this.cena;
               var w = cena.saida.width;
               var h = cena.saida.height;
               var i = 0;
-              // Jitter aleatório aos pixels das imagens originais, mascara o antialising
+              // Jitter- Uma amostragem estratificada - amostragem aleatória - soma de integrais de Monte Carlo;
+			  // Mascara o antialising nos pixels das imagens originais,
 			  // Gera um sobreamento automatico devido a luz irradiante.
               for(var y = Math.random()/h, yPasso = 1.0/h; y < 0.99999; y += yPasso){
                   for(var x = Math.random()/w, xPasso = 1.0/w; x < 0.99999; x += xPasso){
