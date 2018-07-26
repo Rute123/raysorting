@@ -277,8 +277,6 @@ function main(nprocessos, interacaoPorMensagens, width, height){
                 new Corpo(new Esfera(new Vetor(0, 2.6, 0.0), 0.5), new Cromado(new Vetor(0.8, 0.8, 0.8))),
                 // chao
                 new Corpo(new Esfera(new Vetor(0.0, 3.5, -10e6), 10e6-0.5), new Material(new Vetor(0.9, 0.9, 0.9))),
-                // teto
-                new Corpo(new Esfera(new Vetor(10e6/2-1, 3.5, 10e6/2-1), 10e6), new Material(new Vetor(0.9, 0.5, 0.5))),
                 // posterior
                 new Corpo(new Esfera(new Vetor(0.0, 10e6, 0.0), 10e6-4.5), new Material(new Vetor(0.9, 0.9, 0.9))),
                 // esquerda
