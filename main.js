@@ -3,26 +3,27 @@
 
 //Chamadas do Canvas
 function main(nprocessos, interacaoPorMensagens, width, height){
-  if(typeof(Worker) == 'undefined') {
-      alert('Seu navegador não suporta este multiprocessos');
-      return;
-  }
+    if(typeof(Worker) == 'undefined') {
+        alert('Seu navegador não suporta este multiprocessos');
+        return;
+    }
 
-  var canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
-  canvas.position = 'absolute';
-  canvas.margin = 'auto';
-  var contexto = canvas.getContext('2d');
-  document.body.appendChild(canvas);
-  var imagem = contexto.getImageData(0, 0, width, height);
-  var buffer = [];
-  var interacoes = 0;
-  var inicio = new Date();
-  for(var i = 0; i < width*height*3; i++) {
-      buffer.push(0.0);
-  }
+    var canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    canvas.position = 'absolute';
+    canvas.margin = 'auto';
+    var contexto = canvas.getContext('2d');
+    document.body.appendChild(canvas);
+    var imagem = contexto.getImageData(0, 0, width, height);
+    var buffer = [];
+    var interacoes = 0;
+    var inicio = new Date();
+    for(var i = 0; i < width*height*3; i++) {
+        buffer.push(0.0);
+    }
 
+//Worker OLHAR e tirar dúvida do funcionamento
     function funcao_processamento() {
 
       var heranca = function(a) {
@@ -40,9 +41,8 @@ function main(nprocessos, interacaoPorMensagens, width, height){
           this.y = y;
           this.z = z;
       }
+      //Caracteristicas do Vetor
       Vetor.prototype = {
-          // iop -> inplace
-          // ops -> scalar
           adicao: function(v) {
               return new Vetor(this.x+v.x, this.y+v.y, this.z+v.z);
           },
@@ -74,7 +74,8 @@ function main(nprocessos, interacaoPorMensagens, width, height){
           }
       };
 
-      // Retorna uma normal randomica utilizando o algoritimo de roleta russa (OLHAR);**
+      // Envia raios normais aleatorios ao ambiente
+	  // Utiliza o principio de Monte Carlo: roleta russa - complementado no 'Renderizador';
       function getNormalRandomica(v){
           do {
               var v2 = new Vetor(Math.random()*2.0-1.0, Math.random()*2.0-1.0, Math.random()*2.0-1.0);
@@ -110,7 +111,7 @@ function main(nprocessos, interacaoPorMensagens, width, height){
               };
           }
       };
-
+	  // Objetos da cena
       var Esfera = function(centro, raio) {
           this.centro = centro;
           this.raio = raio;
@@ -139,8 +140,7 @@ function main(nprocessos, interacaoPorMensagens, width, height){
               return getNormalRandomica(normal);
           }
       };
-
-
+	  //Reflexao especular
       var Cromado = function(cor) {
           Material.call(this, cor);
       }
@@ -150,7 +150,8 @@ function main(nprocessos, interacaoPorMensagens, width, height){
               return ray.direcao.adicao(normal.multiplicacaoValor(angulo1*2.0));
           }
       });
-    //Ver se é necessário - nas exigencias de descrição de cena indiceDeRefracao= 1.5
+	  // Reflexão difusa
+	  // Considerando que o indiceDeRefracaoVidro= 1.5
       var Vidro = function(cor, indiceDeRefracao, reflexao) {
           Material.call(this, cor);
           this.indiceDeRefracao = indiceDeRefracao;
@@ -161,7 +162,7 @@ function main(nprocessos, interacaoPorMensagens, width, height){
               var angulo1 = Math.abs(ray.direcao.produtoEscalar(normal));
               if(angulo1 >= 0.0) {
                   var indiceInterno = this.indiceDeRefracao;
-                  var indiceExterno = 1.0;
+                  var indiceExterno = 1.0; //indice de refracao do ar;
               }
               else {
                   var indiceInterno = 1.0;
@@ -203,13 +204,14 @@ function main(nprocessos, interacaoPorMensagens, width, height){
                   this.buffer[i].z = 0.0;
               }
           },
-		      //***** OLHAR
+		  //Arquivos de saida
           iterar: function() {
               var cena = this.cena;
               var w = cena.saida.width;
               var h = cena.saida.height;
               var i = 0;
-              // geracao de aleatoridade para evitar o antialising
+              // Jitter aleatório aos pixels das imagens originais, mascara o antialising
+			  // Gera um sobreamento automatico devido a luz irradiante.
               for(var y = Math.random()/h, yPasso = 1.0/h; y < 0.99999; y += yPasso){
                   for(var x = Math.random()/w, xPasso = 1.0/w; x < 0.99999; x += xPasso){
                       var ray = cena.camera.getRay(x, y);
@@ -242,12 +244,11 @@ function main(nprocessos, interacaoPorMensagens, width, height){
               var ponto = ray.origem.adicao(ray.direcao.multiplicacaoValor(pontoDeAtaque));
               var normal = alvo.forma.getNormal(ponto);
               var direcao = alvo.material.contatoDaQueda(ray, normal);
-              // if the ray is refractedmove the intersecaoion point a bit in
+              // Se o raio for refratado mova o ponto de intersecao
               if(direcao.produtoEscalar(ray.direcao) > 0.0) {
                   ponto = ray.origem.adicao(ray.direcao.multiplicacaoValor(pontoDeAtaque*1.0000001));
               }
-              // otherwise move it out to prevent problems with floating point
-              // accuracy
+              // Caso contrario mova-o para evitar problemas com o ponto flutuante
               else {
                   ponto = ray.origem.adicao(ray.direcao.multiplicacaoValor(pontoDeAtaque*0.9999999));
               }
