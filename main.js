@@ -4,7 +4,7 @@
 //Chamadas do Canvas
 function main(nprocessos, interacaoPorMensagens, width, height){
     if(typeof(Worker) == 'undefined') {
-        alert('Seu navegador não suporta este multiprocessos');
+        alert('Seu navegador não suporta este multiprocesso');
         return;
     }
 
@@ -23,7 +23,6 @@ function main(nprocessos, interacaoPorMensagens, width, height){
         buffer.push(0.0);
     }
 
-//Worker OLHAR e tirar dúvida do funcionamento
     function funcao_processamento() {
 
       var heranca = function(a) {
@@ -79,10 +78,11 @@ function main(nprocessos, interacaoPorMensagens, width, height){
       function getNormalRandomica(v){
           do {
               var v2 = new Vetor(Math.random()*2.0-1.0, Math.random()*2.0-1.0, Math.random()*2.0-1.0);
-          } while(v2.produtoEscalar(v2) > 1.0);
-          // Mostra apenas 1.9 interacoes em média
+          }
+		  // Com esta condicao normalize
+		  while(v2.produtoEscalar(v2) > 1.0);
           v2 = v2.normalizar();
-          // Se o ponto estiver na área errada, espelhe-o
+          // Garante que nao seja negativo
           if(v2.produtoEscalar(v) < 0.0) {
               return v2.multiplicacaoValor(-1);
           }
@@ -101,9 +101,10 @@ function main(nprocessos, interacaoPorMensagens, width, height){
           this.xd = superiorDireito.subtracao(superiorEsquerdo);
           this.yd = inferiorEsquerdo.subtracao(superiorEsquerdo);
       }
+	  // Diz que a camera tem capacidade para disparar Rays 
       Camera.prototype = {
           getRay: function(x, y) {
-              // ponto no plano de tela
+              // Posiciona a camera em relacao a um ponto no plano de tela
               var p = this.superiorEsquerdo.adicao(this.xd.multiplicacaoValor(x)).adicao(this.yd.multiplicacaoValor(y));
               return {
                   origem: this.origem,
@@ -111,7 +112,7 @@ function main(nprocessos, interacaoPorMensagens, width, height){
               };
           }
       };
-	  // Objetos da cena
+	  // Caracteristicas da esfera
       var Esfera = function(centro, raio) {
           this.centro = centro;
           this.raio = raio;
@@ -119,6 +120,7 @@ function main(nprocessos, interacaoPorMensagens, width, height){
       };
       Esfera.prototype = {
           // Retorna distancia quando raio intersepta com a superficie da esfera
+		  // Formas de verificacao geometrica 
           intersecao: function(ray) {
               var distancia = ray.origem.subtracao(this.centro);
               var b = distancia.produtoEscalar(ray.direcao);
@@ -131,10 +133,11 @@ function main(nprocessos, interacaoPorMensagens, width, height){
           }
       };
 
-      //Emissão Representa a intensidade da luz
+      // Iluminacao da cena
       var Material = function(cor, emissao) {
           this.cor = cor;
           this.emissao = emissao || new Vetor(0.0, 0.0, 0.0);
+		  //Emissão Representa a intensidade da luz
       }
       Material.prototype = {
           contatoDaQueda: function(ray, normal) {
@@ -183,12 +186,12 @@ function main(nprocessos, interacaoPorMensagens, width, height){
               //return ray.direction.multiplicacaoValor(proporcaoRefracao).subtracao(normal.multiplicacaoValor(angulo2-proporcaoRefracao*angulo1));
           }
       });
-
+	  //Desenha esferas 
       var Corpo = function(forma, material) {
           this.forma = forma;
           this.material = material;
       }
-
+	  // Renderizacao da cena
       var Renderizador = function(cena) {
           this.cena = cena;
           this.vetoresAgrupadores = [6];
@@ -231,6 +234,7 @@ function main(nprocessos, interacaoPorMensagens, width, height){
                   }
               }
           },
+		  // Traçando caminhos dos Rays
           tracar: function(ray, n) {
               var pontoDeAtaque = Infinity;
               // tracar nao mais que 5 contatoDaQueda
