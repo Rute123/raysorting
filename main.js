@@ -286,6 +286,8 @@ function main(nprocessos, interacaoPorMensagens, width, height){
             for (var i = 0; i < this.vetoresAgrupadores.length; i++) {
               console.log("Direção: " + this.vetoresAgrupadores[i].direcaoAgrupada.x + ","+ this.vetoresAgrupadores[i].direcaoAgrupada.y + ","+ this.vetoresAgrupadores[i].direcaoAgrupada.z);
               console.log("Quantidade de Raios " + this.vetoresAgrupadores[i].rays.length);
+              this.vetoresAgrupadores[i].rays = null;
+              this.vetoresAgrupadores[i].rays = [];
             }
           }
       }
