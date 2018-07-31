@@ -101,7 +101,7 @@ function main(nprocessos, interacaoPorMensagens, width, height){
           this.xd = superiorDireito.subtracao(superiorEsquerdo);
           this.yd = inferiorEsquerdo.subtracao(superiorEsquerdo);
       }
-	  // Diz que a camera tem capacidade para disparar Rays 
+	  // Diz que a camera tem capacidade para disparar Rays
       Camera.prototype = {
           getRay: function(x, y) {
               // Posiciona a camera em relacao a um ponto no plano de tela
@@ -120,11 +120,11 @@ function main(nprocessos, interacaoPorMensagens, width, height){
       };
       Esfera.prototype = {
           // Retorna distancia quando raio intersepta com a superficie da esfera
-		  // Formas de verificacao geometrica 
+		  // Formas de verificacao geometrica
           intersecao: function(ray) {
-              var distancia = ray.origem.subtracao(this.centro);
-              var b = distancia.produtoEscalar(ray.direcao);
-              var c = distancia.produtoEscalar(distancia) - this.raioAoQuadrado;
+              var deslocamento = ray.origem.subtracao(this.centro);
+              var b = deslocamento.produtoEscalar(ray.direcao);
+              var c = deslocamento.produtoEscalar(deslocamento) - this.raioAoQuadrado;
               var d = b*b - c;
               return d > 0 ? -b - Math.sqrt(d) : -1;
           },
@@ -186,7 +186,7 @@ function main(nprocessos, interacaoPorMensagens, width, height){
               //return ray.direction.multiplicacaoValor(proporcaoRefracao).subtracao(normal.multiplicacaoValor(angulo2-proporcaoRefracao*angulo1));
           }
       });
-	  //Desenha esferas 
+	  //Desenha esferas
       var Corpo = function(forma, material) {
           this.forma = forma;
           this.material = material;
